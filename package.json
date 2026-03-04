@@ -3,7 +3,8 @@
   "private": true,
   "workspaces": [
     "packages/*",
-    "apps/*"
+    "apps/*",
+    "tools/*"
   ],
   "scripts": {
     "build": "turbo run build",
@@ -20,6 +21,9 @@
     "@types/pg": "^8.18.0",
     "turbo": "^2.4.0",
     "typescript": "^5.7.0"
+  },
+  "overrides": {
+    "sucrase": "3.34.0"
   },
   "engines": {
     "node": ">=20"
