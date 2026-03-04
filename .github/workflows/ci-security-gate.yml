@@ -159,13 +159,14 @@ jobs:
           path: eslint-report.json
           retention-days: 7
 
-      # Fail the job if ESLint found errors (not warnings)
+      # Fail the job if ESLint found errors (warnings are reported but allowed)
       - name: Check for ESLint errors
         run: |
           if npx eslint . --ext .ts,.tsx,.js,.jsx 2>/dev/null; then
             echo "ESLint passed cleanly"
           else
             EXIT_CODE=$?
+            # Exit code 1 = lint errors found; Exit code 2 = config/parse problem
             if [ $EXIT_CODE -eq 2 ]; then
               echo "::warning::ESLint configuration issue detected. Review your .eslintrc config."
               exit 0
@@ -233,7 +234,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-     - name: Install Semgrep
+      - name: Install Semgrep
         run: pip install semgrep --quiet
 
       - name: Run Semgrep
