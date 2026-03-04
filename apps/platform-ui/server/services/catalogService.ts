@@ -1,10 +1,9 @@
 import fs from 'fs';
 import path from 'path';
-import { fileURLToPath } from 'url';
 import type { Feature, CatalogStats } from '../types.js';
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const CATALOG_PATH = path.resolve(__dirname, '../../../../catalog/features.json');
+// Use process.cwd() for stable path resolution in both dev (tsx) and prod (compiled)
+const CATALOG_PATH = path.resolve(process.cwd(), '../../catalog/features.json');
 
 let cachedCatalog: Feature[] | null = null;
 

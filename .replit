@@ -1,0 +1,15 @@
+run = "cd apps/platform-ui && npm start"
+
+[nix]
+channel = "stable-24_05"
+
+[env]
+PATH = "/home/runner/$REPL_SLUG/node_modules/.bin:$PATH"
+
+[deployment]
+run = ["sh", "-c", "cd apps/platform-ui && npm start"]
+build = ["sh", "-c", "npm install && npm run build"]
+
+[[ports]]
+localPort = 3456
+externalPort = 80

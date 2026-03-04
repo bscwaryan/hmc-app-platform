@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "vite",
     "dev:server": "tsx watch server/index.ts",
-    "build": "vite build",
+    "build": "vite build && tsc -p server/tsconfig.json",
+    "build:client": "vite build",
     "build:server": "tsc -p server/tsconfig.json",
     "preview": "vite preview",
     "start": "node dist/server/index.js",
