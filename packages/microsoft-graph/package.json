@@ -1,0 +1,25 @@
+{
+  "name": "@hmc/microsoft-graph",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "scripts": {
+    "build": "tsc",
+    "typecheck": "tsc --noEmit",
+    "clean": "rm -rf dist",
+    "test": "echo 'No tests yet'"
+  },
+  "dependencies": {
+    "@hmc/logger": "*",
+    "@hmc/security": "*",
+    "@microsoft/microsoft-graph-client": "^3.0.7"
+  }
+}
