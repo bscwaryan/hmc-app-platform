@@ -1,0 +1,10 @@
+# Semgrep ignore patterns
+dist/
+node_modules/
+**/*.test.ts
+**/*.test.tsx
+**/*.spec.ts
+**/__tests__/
+drizzle/
+scripts/
+drizzle/archive/

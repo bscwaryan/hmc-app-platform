@@ -55,16 +55,15 @@ jobs:
     steps:
       - name: Determine if deep scan should run
         id: check
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          COMMIT_MESSAGE: ${{ github.event.head_commit.message }}
         run: |
-          if [[ "${{ github.event_name }}" == "schedule" || "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+          if [[ "$EVENT_NAME" == "schedule" || "$EVENT_NAME" == "workflow_dispatch" ]]; then
             echo "run=true" >> $GITHUB_OUTPUT
-            echo "Triggered by: ${{ github.event_name }}"
-          elif [[ "${{ github.event_name }}" == "push" ]]; then
-            COMMIT_MSG=$(cat <<'COMMIT_EOF'
-          ${{ github.event.head_commit.message }}
-          COMMIT_EOF
-            )
-            if echo "$COMMIT_MSG" | grep -qi '\[scan\]'; then
+            echo "Triggered by: $EVENT_NAME"
+          elif [[ "$EVENT_NAME" == "push" ]]; then
+            if echo "$COMMIT_MESSAGE" | grep -qi '\[scan\]'; then
               echo "run=true" >> $GITHUB_OUTPUT
               echo "Triggered by: [scan] keyword in commit message"
             else

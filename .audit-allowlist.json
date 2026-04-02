@@ -1,0 +1,5 @@
+{
+  "_comment": "Known vulnerabilities that have been reviewed and acknowledged. These will not block CI. Review and update quarterly.",
+  "_last_reviewed": "2026-04-02",
+  "allowlist": []
+}

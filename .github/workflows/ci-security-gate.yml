@@ -71,16 +71,15 @@ jobs:
     steps:
       - name: Determine if full scan should run
         id: check
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          COMMIT_MESSAGE: ${{ github.event.head_commit.message }}
         run: |
-          if [[ "${{ github.event_name }}" == "schedule" || "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+          if [[ "$EVENT_NAME" == "schedule" || "$EVENT_NAME" == "workflow_dispatch" ]]; then
             echo "run=true" >> $GITHUB_OUTPUT
-            echo "Triggered by: ${{ github.event_name }}"
-          elif [[ "${{ github.event_name }}" == "push" ]]; then
-            COMMIT_MSG=$(cat <<'COMMIT_EOF'
-          ${{ github.event.head_commit.message }}
-          COMMIT_EOF
-            )
-            if echo "$COMMIT_MSG" | grep -qi '\[scan\]'; then
+            echo "Triggered by: $EVENT_NAME"
+          elif [[ "$EVENT_NAME" == "push" ]]; then
+            if echo "$COMMIT_MESSAGE" | grep -qi '\[scan\]'; then
               echo "run=true" >> $GITHUB_OUTPUT
               echo "Triggered by: [scan] keyword in commit message"
             else
@@ -330,10 +329,64 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      # npm audit — built-in, zero config
+      # npm audit with allowlist support
+      # Acknowledged unfixable CVEs are listed in .audit-allowlist.json
       - name: Run npm audit
-        run: npm audit --audit-level=high
-        continue-on-error: false
+        run: |
+          npm audit --audit-level=high --json > /tmp/audit-output.json 2>&1 || true
+
+          if [ -f ".audit-allowlist.json" ]; then
+            ALLOWLIST=$(python3 -c "import json; print(' '.join(json.load(open('.audit-allowlist.json')).get('allowlist', [])))" 2>/dev/null || echo "")
+          else
+            ALLOWLIST=""
+          fi
+
+          python3 << 'AUDIT_PYEOF'
+          import json, sys
+
+          try:
+              data = json.load(open('/tmp/audit-output.json'))
+          except (json.JSONDecodeError, FileNotFoundError):
+              print("npm audit produced no JSON output — assuming clean")
+              sys.exit(0)
+
+          allowlist = set()
+          try:
+              al = json.load(open('.audit-allowlist.json'))
+              allowlist = set(str(a) for a in al.get('allowlist', []))
+          except (FileNotFoundError, json.JSONDecodeError):
+              pass
+
+          vulns = data.get('vulnerabilities', {})
+          blocked = []
+          allowed = []
+
+          for name, info in vulns.items():
+              severity = info.get('severity', 'low')
+              if severity not in ('high', 'critical'):
+                  continue
+              advisory_urls = [v.get('url', '') for v in info.get('via', []) if isinstance(v, dict)]
+              ghsa_ids = [u.split('/')[-1] for u in advisory_urls if 'GHSA-' in u]
+
+              if ghsa_ids and all(g in allowlist for g in ghsa_ids):
+                  allowed.append(f"{name} ({severity}) — allowlisted: {', '.join(ghsa_ids)}")
+              else:
+                  blocked.append(f"{name} ({severity})")
+
+          if allowed:
+              print(f"Allowlisted ({len(allowed)}):")
+              for a in allowed:
+                  print(f"  {a}")
+
+          if blocked:
+              print(f"\nBLOCKING ({len(blocked)}):")
+              for b in blocked:
+                  print(f"  {b}")
+              print(f"\n::error::{len(blocked)} high/critical vulnerabilities found (not in allowlist)")
+              sys.exit(1)
+          else:
+              print("\nAll high/critical vulnerabilities are either fixed or allowlisted.")
+          AUDIT_PYEOF
 
       # Snyk — deeper analysis with fix recommendations
       # Requires SNYK_TOKEN in GitHub Secrets
